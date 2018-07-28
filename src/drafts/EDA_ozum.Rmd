@@ -1,0 +1,175 @@
+---
+title: "EDA_ozum"
+author: "Ozum"
+date: "April 9, 2018"
+output: 
+  html_document:
+    keep_md: yes
+    fig_align: yes
+    fig_height: 8
+    fig_width: 20
+    toc: yes
+---
+
+```{r setup, messages = FALSE, warning = FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(googlesheets)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+
+th <- 
+  theme_bw() +
+  theme(axis.text.y = element_blank(), 
+        text = element_text(size=25),
+        plot.title = element_text(hjust = 0),
+        legend.position = "bottom")
+
+survey <- gs_key("1bcOXpWm1lT4Ur7gZt-hycBa0ljjBOvHNKe35P3xxSqw") %>% 
+  gs_read() %>% 
+  select(c(-1:-2)) %>% 
+  transmute(background = ifelse(!(`What is your academic background?` %in% 
+                                    c("Computer Science / Computer Engineering", "Mathematics / Statistics")), 
+                                "Other", `What is your academic background?`),
+         coding_experience = `How many years of coding experience do you have prior to using Python/R?`,
+         coding_love = `Do you enjoy/love coding?`,
+         first_language = `Which programming language did you learn first?`,
+         language_preference = `Which of the following programming languages do you prefer more?`,
+         task_preference = `What is your favorite data science task?`, 
+         active_languages = `How many programming languages do you use actively?`)
+  
+```
+
+```{r read_data, eval=FALSE}
+survey <- read.csv("../data/survey_responses.csv", stringsAsFactors = FALSE)[-c(1,2)] %>% 
+  transmute(background = ifelse(!(What.is.your.academic.background. %in% c("Computer Science / Computer Engineering", "Mathematics / Statistics")), "Other", What.is.your.academic.background.),
+         coding_experience = How.many.years.of.coding.experience.do.you.have.prior.to.using.Python.R.,
+         coding_love = Do.you.enjoy.love.coding.,
+         first_language = Which.programming.language.did.you.learn.first.,
+         language_preference = Which.of.the.following.programming.languages.do.you.prefer.more.,
+         task_preference = What.is.your.favorite.data.science.task.)
+```
+
+## Who are the respondents?
+
+```{r, fig.height = 25}
+academic_background <- ggplot(data = survey) +
+  geom_bar(aes(x = background, fill = background)) +
+  coord_flip() +
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Academic background of respondents") +
+  th +
+  scale_fill_brewer(palette = "Dark2")
+  
+
+coding_experience <- ggplot(data = survey) +
+  geom_bar(aes(x = coding_experience, fill = coding_experience)) +
+  coord_flip() +
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Years of coding experience") +
+  th + 
+  scale_fill_brewer(palette = "Accent")
+
+
+coding_love <- ggplot(data = survey) +
+  geom_bar(aes(x = coding_love, fill = coding_love)) +
+  coord_flip() +
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Love coding?") +
+  th + 
+  scale_fill_brewer(palette = "Paired")
+
+
+first_language <- ggplot(data = survey) +
+  geom_bar(aes(x = first_language, fill = first_language)) +
+  coord_flip() +
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "First language learnt") +
+  th
+
+active_languages <- ggplot(data = survey) +
+  geom_bar(aes(x = active_languages, fill = active_languages)) +
+  coord_flip() +
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Number of languages used actively") +
+  th + 
+  scale_fill_brewer(palette = "Dark2")
+
+plot_grid(academic_background, plot_grid(coding_experience, coding_love), plot_grid(first_language, active_languages), ncol = 1, scale = 0.9)
+```
+
+## Language preference based on different variables
+
+### How does favorite task affect preference of programming language?
+
+```{r, fig.height=10}
+task <- ggplot(survey) +
+  geom_bar(aes(x = language_preference, fill = language_preference)) +
+  facet_wrap(~task_preference) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Language preference based on task") +
+  th
+
+task
+```
+
+### How do the confounding variables affect preference of programming language?
+
+```{r, fig.height=10}
+academic_background2 <- ggplot(survey) +
+  geom_bar(aes(x = language_preference, fill = language_preference)) +
+  facet_wrap(~background) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Language preference based on academic background") +
+  th
+
+coding_experience2 <- ggplot(survey) +
+  geom_bar(aes(x = language_preference, fill = language_preference)) +
+  facet_wrap(~coding_experience) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Language preference based on coding experience") +
+  th
+
+coding_love2 <- ggplot(survey) +
+  geom_bar(aes(x = language_preference, fill = language_preference)) +
+  facet_wrap(~coding_love) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Language preference based on coding love") +
+  th
+
+first_language2 <- ggplot(survey) +
+  geom_bar(aes(x = language_preference, fill = language_preference)) +
+  facet_wrap(~first_language) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Language preference based on first language") +
+  th
+
+active_languages2 <- ggplot(survey) +
+  geom_bar(aes(x = language_preference, fill = language_preference)) +
+  facet_wrap(~active_languages) +
+  guides(fill=FALSE) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(fill = "", y = "Number of people", x = "", 
+       title = "Language preference based on number of languages used actively") +
+  th
+
+#plot_grid(academic_background2, coding_experience2, coding_love2, first_language2)
+
+
+academic_background2
+coding_experience2
+coding_love2
+first_language2
+active_languages2
+```
+

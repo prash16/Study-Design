@@ -1,0 +1,156 @@
+---
+title: "Data Science Language Analysis"
+author:
+- Nazli Ozum Kafaee
+- Prash Medirattaa
+- Avinash Prabhakaran
+date: '2018-04-15'
+output:
+  pdf_document: default
+subtitle: <h1><u>Statistical Analysis</u></h1>
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+#Loading the required packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(knitr))
+```
+
+```{r}
+#Reading in processed data. 
+responses <- read.csv(file = "../docs/survey_results_clean.csv")
+```
+
+
+```{r}
+#preference encoding the response variable. Python -> 1; R -> 0 
+data <- responses %>% mutate(preference = if_else(preference == "Python", 1, 0))
+
+data$background <- as.character(data$background)
+data <- data %>% 
+  mutate(background = ifelse(background == "Computer Science / Computer Engineering", 
+                             "Computer Sc/Eng", 
+                              ifelse(background == "Mathematics / Statistics",
+                                     "Maths/Stats", background)))
+
+#Releveling the reference task from Data Viz -> Machine Learning
+data_relevel <- data
+data_relevel$task <-relevel(data$task,ref="Machine Learning")
+
+#Fitting a GLM without any confounding variables.
+mod <- glm(preference ~ task, family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+
+```{r}
+#Fitting GLM with all the confounding variables.
+mod <- glm(preference ~ task + background + experience + attitude + first + active,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+
+```{r}
+#Removing Attitude as Confounder as change
+mod <- glm(preference ~ task + background + experience + first + active,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+```{r}
+#Removing Experience as Confounder
+mod <- glm(preference ~ task + background + first + active,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+
+```{r}
+#Removing active as Confounder
+mod <- glm(preference ~ task + background + first,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+**Not Removing `active` as the AIC score of the model increases from 86 to 90.**
+
+
+```{r}
+#Removing first as Confounder
+mod <- glm(preference ~ task + background + active,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+**Not Removing `first language` as the AIC score of the model increases from 86 to 90.**
+
+```{r}
+#Removing background as Confounder
+mod <- glm(preference ~ task + first + active,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+**Not Removing `background` as the AIC score of the model increases from 86 to 89.**
+
+```{r}
+#Model with first language, background and active
+mod <- glm(preference ~ task + background + first + active,
+           family = binomial(link = 'logit'), data = data)
+summary(mod)
+```
+
+```{r}
+#Releveled model with first language, background and active
+model <- glm(preference ~ task + background + first + active,
+             family = binomial(link = 'logit'), data = data_relevel)
+summary(model)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+#Adjusting for p-values.(Not required anymore after chat with Tiffany)
+#p.vals <- summary(model)$coef[,4]
+#p.adjust(p.vals ,method = "BH") < 0.05
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+#https://stackoverflow.com/questions/11767602/backward-elimination-in-r?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+mod <- glm(preference ~ task * background * experience * attitude * first * active, family = binomial(link = 'logit'), data = data)
+be_mod <- step(mod, direction = "both", trace=FALSE)
+summary(be_mod)
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+#Not Required to Relevel the confounders.
+#Releveling the reference task from Data Viz -> Machine Learning
+#Releveling the reference first language from C -> R
+data_relevel <- data
+data_relevel$task <-relevel(data$task,ref="Machine Learning")
+data_relevel$first <-relevel(data$first,ref="R")
+
+model <- glm(preference ~ task + first, family = binomial(link = 'logit'), data = data_relevel)
+summary(model)
+```
+
+```{r}
+# Comparison of AIC scores for all the models
+bind_cols(model = c("preference ~ task",
+                    "preference ~ task + background + experience + attitude + first + active",
+                    "preference ~ task + background + experience + first + active",
+                    "preference ~ task + background + first + active",
+                    "preference ~ task + background + first",
+                    "preference ~ task + background + active",
+                    "preference ~ task + first + active"),
+          AIC = c(93.555, 90.394, 88.42, 86.694, 90.428, 90.411, 89.657)) %>%
+  kable()
+
+```
+

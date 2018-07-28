@@ -1,0 +1,161 @@
+---
+title: "Prash_survey_analysis"
+author: "prash"
+date: '2018-04-09'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,message=FALSE,warning=FALSE}
+library(tidyverse)
+library(knitr)
+library(stringr)
+```
+
+```{r,message=FALSE,warning=FALSE}
+survey <- read_csv("../../data/survey_responses.csv")
+```
+
+
+
+```{r}
+kable(head(survey))
+
+survey_analysis <- survey %>% 
+  select(-c(1,2)) 
+
+
+colnames(survey_analysis) <- c("academic","codingexp","lovecoding","firstprog","preferprog","dstask","noofprog")
+
+
+```
+
+
+```{r}
+kable(head(survey_analysis))
+```
+
+
+
+```{r}
+
+survey_analysis %>% group_by(preferprog)%>% 
+  summarize(count=n()) %>% 
+  kable()
+```
+
+```{r}
+
+
+#survey_analysis$academic <- str_replace(tolower(survey_analysis$academic),c(".*econ.*",".*fin.*",".*business.*"),"Business")
+
+
+
+#survey_analysis$academic <- str_replace(tolower(survey_analysis$academic),c(".*econ.*",".*fin.*",".*business.*"),"Business")
+
+
+
+
+#?str_replace
+#survey_analysis$academic <- str_replace(survey_analysis$academic,"Mathematics / Statistics","Math & Stats")
+
+survey_analysis$academic <- str_replace(survey_analysis$academic,"Computer Science / Computer Engineering","computer")
+
+survey_analysis$academic <- str_replace(tolower(survey_analysis$academic),".*econ.*","business")
+
+survey_analysis$academic <- str_replace(tolower(survey_analysis$academic),".*busi.*","business")
+
+survey_analysis$academic <- str_replace(tolower(survey_analysis$academic),".*eng.*","engineering")
+
+
+
+# Creating a vector, putting all the fields to others 
+
+survey_clean_1 <- c("business","computer","engineering","mathematics / statistics")
+
+#interact_clean$name[!(interact_clean$name %in% interact_clean_1)] <- "other"
+
+survey_analysis$academic[!(survey_analysis$academic%in% survey_clean_1)] <- "other"
+
+
+# Summary 
+survey_analysis_count<- survey_analysis %>% 
+  group_by(academic) %>% 
+  summarise(count=n()) %>% 
+  View()
+
+
+
+
+```
+
+
+
+```{r}
+survey_analysis %>% 
+  ggplot(aes(academic))+geom_bar(fill="red",position = "dodge")+
+  labs(title="Bar Chart",x="Academic Background",y="Count") +
+  theme_bw()
+```
+
+
+
+```{r}
+ survey_analysis %>% 
+  ggplot() +
+  geom_bar(aes(x = dstask,fill = dstask)) +
+  facet_wrap(~academic) 
+
+```
+
+
+
+
+
+```{r}
+
+ survey_analysis %>% 
+  ggplot() +
+  geom_bar(aes(x = preferprog,fill = preferprog)) +
+  facet_wrap(~academic) 
+
+```
+
+
+
+
+
+```{r}
+survey_analysis %>% 
+  ggplot() +
+  geom_bar(aes(x = preferprog,fill = preferprog)) +
+  facet_wrap(~dstask)+theme_bw()+
+  scale_fill_discrete(name = "Choice of languge")+
+   ggtitle("Data Science Task ")+xlab("Choice of language") + ylab("Count")+
+  theme(plot.title = element_text(hjust = 0.5,face="bold",size=16))
+```
+```{r}
+survey_analysis %>% 
+  ggplot() +
+  geom_bar(aes(x = preferprog,fill = preferprog)) +
+  facet_wrap(~codingexp)+theme_bw()+
+  scale_fill_discrete(name = "Choice of languge")+
+   ggtitle("Data Science Task ")+xlab("Choice of language") + ylab("Count")+
+  theme(plot.title = element_text(hjust = 0.5,face="bold",size=16))
+```
+
+
+
+```{r}
+survey_analysis %>% 
+  ggplot() +
+  geom_bar(aes(x = preferprog,fill = preferprog)) +
+  facet_wrap(~lovecoding)+theme_bw()+
+  scale_fill_discrete(name = "Choice of languge")+
+   ggtitle("Data Science Task ")+xlab("Choice of language") + ylab("Count")+
+  theme(plot.title = element_text(hjust = 0.5,face="bold",size=16))
+```
+

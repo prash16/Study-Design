@@ -1,0 +1,56 @@
+---
+title: "Exploratory Data Analysis"
+author: "Ozum, Prash, Avinash"
+date: '2018-04-09'
+output:
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+<style>
+
+.middle {
+text-align: center;
+}
+
+img {
+ width: 40%;
+ height: 30%
+}
+
+</style>
+
+<div class = "middle">
+<img src = "../docs/academics.png">
+<img src = "../docs/academics_prop.png">
+</div>
+
+<div class = "middle">
+<img src = "../docs/experience.png">
+<img src = "../docs/experience_prop.png">
+</div>
+
+<div class = "middle">
+<img src = "../docs/attitude.png">
+<img src = "../docs/attitude_prop.png">
+</div>
+
+<div class = "middle">
+<img src = "../docs/first_language.png">
+<img src = "../docs/first_language_prop.png">
+</div>
+
+<div class = "middle">
+<img src = "../docs/task.png">
+<img src = "../docs/task_prop.png">
+</div>
+
+<div class = "middle">
+<img src = "../docs/active_use.png">
+<img src = "../docs/active_use_prop.png">
+</div>

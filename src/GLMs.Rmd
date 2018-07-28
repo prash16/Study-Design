@@ -1,0 +1,249 @@
+---
+title: "Data Science Language Analysis"
+author:
+- Nazli Ozum Kafaee
+- Prash Medirattaa
+- Avinash Prabhakaran
+date: '2018-04-15'
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    highlight: tango
+    keep_md: yes
+    theme: united
+    toc: yes
+    toc_float: yes
+subtitle: <h1><u>EDA Report</u></h1>
+
+---
+
+
+```{r}
+
+library(MASS)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+#Loading the required packages
+suppressPackageStartupMessages(library(tidyverse))
+```
+
+```{r}
+#Reading in processed data. 
+responses <- read.csv(file = "../docs/survey_results_clean.csv")
+```
+
+
+```{r}
+#Binary encoding the response variable. Python -> 1; R -> 0 
+data <- responses %>% mutate(binary = if_else(preference == "Python", 1, 0))
+
+#Releveling the reference task from Data Viz -> Machine Learning
+data_relevel <- data
+data_relevel$task <-relevel(data$task,ref="Machine Learning")
+
+#Fitting a GLM without any confounding variables.
+mod <- glm(binary ~ task, data = data)
+summary(mod)
+```
+
+### Interpretation 
+
+Defining the hypothesis 
+
+Response :   "Python" - 1
+               "R"   -  0
+
+Beta 0 (intercept) - Task vizualization
+
+Ho : Beta 1 (taskData wrangling)
+
+Model - logit(pi) = 0.30435 + 0.19565 *taskData wrangling + 0.54982 *taskMachine Learning
+
+We can say that about the model above,  Data wrangling  task appears to have not signifact impact on the probability of choosing language(python/R), while controlling the Machine Learning task. 
+
+
+```{r}
+exp(cbind(coef(mod), confint(mod)))  
+```
+
+The odds ratio for the value of the intercept(Data Vizualization Task) is the odds of "success"(in our survey results - python )
+
+The odds ratio for the value of the intercept is the odds of a "success" (in your data, this is the odds of taking the product) when x = 0 (i.e. zero thoughts)
+
+
+
+```{r}
+cbind( exp(coef(mod)), exp(summary(mod)$coefficients[,1] - 1.96*summary(mod)$coefficients[,2]), exp(summary(mod)$coefficients[,1] + 1.96*summary(mod)$coefficients[,2]) )
+```
+
+
+
+
+
+```{r}
+plot(cooks.distance(mod))
+```
+
+```{r}
+anova(mod,test="Chi")
+```
+
+
+
+
+
+```{r}
+mod <- glm(binary ~ task, data = data_relevel)
+summary(mod)
+```
+
+
+```{r}
+#Fitting GLM with all the confounding variables.
+responses %>% colnames()
+
+mod <- glm(binary ~ task + background + experience + attitude + first + active, data = data)
+summary(mod)
+```
+
+
+
+```{r}
+mod <- glm(binary ~ task + background + experience + attitude + first + active, data = data_relevel)
+summary(mod)
+```
+
+
+```{r}
+#Removing Attitude as Confounder as change
+mod <- glm(binary ~ task + background + experience + attitude + first + active, data = data)
+summary(mod)
+```
+
+
+```{r}
+#Removing Attitude as Confounder as change
+mod <- glm(binary ~ task + background + experience + first + active, data = data_relevel)
+summary(mod)
+```
+
+
+```{r}
+#Removing Experience as Confounder
+mod <- glm(binary ~ task + background + first + active, data = data)
+summary(mod)
+```
+
+
+
+```{r}
+#Removing Experience as Confounder
+mod <- glm(binary ~ task + background + first + active, data = data_relevel)
+summary(mod)
+```
+
+
+
+
+
+```{r}
+#Removing active as Confounder
+mod <- glm(binary ~ task + background + first, data = data)
+summary(mod)
+```
+
+
+
+```{r}
+#Removing active as Confounder
+mod <- glm(binary ~ task + background + first, data = data_relevel)
+summary(mod)
+```
+
+
+
+```{r}
+#Removing first as Confounder
+mod <- glm(binary ~ task + background, data = data)
+summary(mod)
+```
+
+
+
+```{r}
+#Removing first as Confounder
+mod <- glm(binary ~ task + background, data = data_relevel)
+summary(mod)
+```
+
+
+**Not Removing first language as the AIC score of the model increases from 94.689 to 97.83.**
+
+```{r}
+#Removing background as Confounder
+mod <- glm(binary ~ task + first, data = data)
+summary(mod)
+```
+
+
+
+```{r}
+#Removing background as Confounder
+mod <- glm(binary ~ task + first, data = data_relevel)
+summary(mod)
+```
+
+**Removing Background as confounder as the model with only first language as confounder gives the lowest AIC score**
+
+
+
+```{r}
+#Model with first language and background
+mod <- glm(binary ~ task + first, data = data)
+summary(mod)
+```
+
+```{r}
+model <- glm(binary ~ task + first, data = data_relevel)
+summary(model)
+
+#Adjusting for p-values.(Not required anymore after chat with Tiffany)
+#p.vals <- summary(model)$coef[,4]
+#p.adjust(p.vals ,method = "BH") < 0.05
+```
+
+```{r}
+model <- glm(binary ~ task * first, data = data_relevel)
+summary(model)
+```
+
+```{r}
+#https://stackoverflow.com/questions/11767602/backward-elimination-in-r?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+mod <- glm(binary ~ task * background * experience * attitude * first * active, data = data)
+be_mod <- step(mod, direction = "both", trace=FALSE)
+summary(be_mod)
+```
+
+
+```
+#Not Required to Relevel the confounders.
+#Releveling the reference task from Data Viz -> Machine Learning
+#Releveling the reference first language from C -> R
+data_relevel <- data
+data_relevel$task <-relevel(data$task,ref="Machine Learning")
+data_relevel$first <-relevel(data$first,ref="R")
+
+model <- glm(binary ~ task + first, data = data_relevel)
+summary(model)
+```
+
+
